@@ -2,9 +2,6 @@ name: Release
 run-name: Release ${{ inputs.release_tag || github.ref_name }}
 
 on:
-  push:
-    tags:
-      - "v*-i18n.*"
   workflow_dispatch:
     inputs:
       build_mode:
@@ -694,14 +691,3 @@ jobs:
         run: |
           RELEASE_TAG="${INPUT_RELEASE_TAG:-$GITHUB_REF_NAME}"
           gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --draft=false
-
-      - name: Update packaging
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          INPUT_RELEASE_TAG: ${{ inputs.release_tag || '' }}
-        run: |
-          RELEASE_TAG="${INPUT_RELEASE_TAG:-$GITHUB_REF_NAME}"
-          gh workflow run i18n-update-packaging.yml \
-            --repo "$GITHUB_REPOSITORY" \
-            --ref "$RELEASE_TAG" \
-            --field release_tag="$RELEASE_TAG"
