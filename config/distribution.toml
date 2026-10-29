@@ -22,7 +22,7 @@ shell_name_short = "Z&ed i18n"
 
 [publisher]
 name = "zed-i18n"
-url = "https://github.com/LI-NA/zed-i18n"
+url = "https://github.com/bestnite/zed-i18n"
 
 [update]
 enabled = true

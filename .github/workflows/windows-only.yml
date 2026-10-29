@@ -1,0 +1,74 @@
+name: Windows build (i18n)
+
+# Thin dispatcher around the upstream release pipeline.
+#
+# The fork only ships Windows x86_64, so this workflow calls the unchanged
+# `.github/workflows/i18n-release.yml` with its platform matrix narrowed to
+# `windows-x86_64`. Keeping the upstream workflow untouched means rebasing
+# onto LI-NA/zed-i18n stays conflict-free; the build logic lives in one place.
+#
+# Build jobs land on a `windows-2022` runner (~65 minutes) and are visible in
+# the Actions tab as a separate "Release <tag>" run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_mode:
+        description: "universal ships one build for every enabled locale; per-language is the legacy rollback path."
+        required: false
+        type: choice
+        options:
+          - universal
+          - per-language
+        default: universal
+      languages:
+        description: "Comma-separated locales to build in per-language mode, or all."
+        required: false
+        default: "all"
+      upload_to_release:
+        description: "Upload build artifacts to a draft GitHub Release. Needs release_tag; the tag must already exist."
+        required: false
+        type: boolean
+        default: false
+      release_tag:
+        description: "Release tag for uploads, e.g. v1.25.3-i18n.1. Leave empty to build artifacts only."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: windows-only-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    name: Dispatch windows-x86_64 build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger i18n-release.yml for windows-x86_64
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BUILD_MODE: ${{ inputs.build_mode || 'universal' }}
+          LANGUAGES: ${{ inputs.languages || 'all' }}
+          UPLOAD_TO_RELEASE: ${{ inputs.upload_to_release }}
+          RELEASE_TAG: ${{ inputs.release_tag || '' }}
+        run: |
+          set -euo pipefail
+          gh workflow run i18n-release.yml \
+            --repo "$GITHUB_REPOSITORY" \
+            --ref "$GITHUB_REF_NAME" \
+            --field build_mode="$BUILD_MODE" \
+            --field languages="$LANGUAGES" \
+            --field platforms=windows-x86_64 \
+            --field shard_size=1 \
+            --field upload_to_release="$UPLOAD_TO_RELEASE" \
+            --field release_tag="$RELEASE_TAG"
+
+          sleep 10
+          gh run list --repo "$GITHUB_REPOSITORY" \
+            --workflow i18n-release.yml --limit 1 \
+            --json url,status,displayTitle \
+            --jq '.[] | "Dispatched \(.displayTitle): \(.url) (\(.status))"'
