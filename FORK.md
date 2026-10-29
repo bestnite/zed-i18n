@@ -18,6 +18,8 @@ Keep this list short and mergeable — it is the complete set of local changes:
 | `.github/workflows/i18n-update-packaging.yml` | deleted | No Homebrew tap / Scoop bucket in this fork. |
 | `.github/workflows/i18n-linux-builder.yml` | deleted | The GHCR Linux builder image is only used by Linux builds. |
 | `config/distribution.toml` | `[publisher].url` points here | About dialog links to this fork. The update manifest URL needs no change: it is derived from `github.repository` at build time, so it already resolves to this fork's releases. |
+| `scripts/sync-upstream.sh` | added | One-command upstream sync + pin report. |
+| `FORK.md` | added | This document. |
 | `tests/test_packaging.py`, `tests/test_linux_builder_workflow.py` | packaging-workflow assertions removed | Assertions targeted the deleted workflows. |
 
 `config/project.toml` is never edited by hand — it is updated by the upstream sync commits.
@@ -48,6 +50,17 @@ unsigned installer.` and produces an unsigned installer (Windows SmartScreen wil
 
 ```bash
 cd ~/dev/zed-i18n
+scripts/sync-upstream.sh            # fetch upstream, merge, print the pinned Zed version
+scripts/sync-upstream.sh --push     # same, then push master
+```
+
+The script refuses to run on a dirty tree, merges `upstream/master` only when it is not already
+an ancestor, then prints `config/project.toml`, the local commits on top of upstream, and upstream's
+latest release tag so you can see whether a rebuild is worth it.
+
+Manual equivalent:
+
+```bash
 git fetch upstream --tags
 git merge upstream/master          # conflicts, if any, only in the files listed above
 git push origin master
