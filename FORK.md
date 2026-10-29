@@ -42,6 +42,14 @@ Publishing uploads the assets to a draft release, validates them, then un-drafts
 the shipped build reads `releases/latest/download/manifest.json` from this repository, so only
 Windows assets need to exist for updates to work on Windows.
 
+> **Always pass `release_tag` when publishing.** The manifest's `release_tag` and every
+> `download_url` are built from it. Dispatch without it and the manifest falls back to the branch
+> name (`master`), pointing auto-update at `releases/download/master/...`, which does not exist.
+> An artifacts-only run is fine to leave without a tag; a published one is not.
+
+`release-notes.md` is generated with a placeholder changelog comment; fill it in before un-drafting
+if the release needs notes beyond "Localized Zed build for <version>".
+
 No repository secrets are required. Code signing uses Azure Trusted Signing variables when
 present; without them the build prints `Windows signing variables are incomplete; building
 unsigned installer.` and produces an unsigned installer (Windows SmartScreen will warn).
